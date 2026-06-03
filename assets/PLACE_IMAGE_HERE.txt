@@ -1,0 +1,5 @@
+Place the portrait image file here and name it `jamiwal.jpg` (lowercase).
+
+The About page expects: assets/jamiwal.jpg
+
+You can copy your provided photo into this folder with that filename before committing and uploading to GitHub.
