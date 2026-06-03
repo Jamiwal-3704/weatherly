@@ -16,10 +16,8 @@
   height: 100vh;
   color: var(--colorLight2);
   background: linear-gradient(160deg, #112d4e 0%, #3f72af 100%);
-  /* background-image: url(./assets/Lovepik_com-401124514-paper-cut-style-cloud.png); */
   overflow-x: hidden;
   overflow-y: scroll;
-  /* z-index: 10; */
   transition:
     background 600ms ease,
     background-image 600ms ease,
@@ -31,7 +29,6 @@
   object-fit: cover;
   bottom: 0px;
   opacity: 20%;
-  /* z-index: 5; */
 }
 .img2 {
   position: absolute;
@@ -69,6 +66,69 @@ h1 {
   text-transform: uppercase;
   padding-top: 20px;
 }
+
+.top-nav {
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+.top-nav .brand {
+  font-weight: 700;
+  color: var(--colorLight2);
+  text-decoration: none;
+}
+.top-nav .nav-link {
+  color: var(--colorLight2);
+  text-decoration: none;
+  margin-left: 16px;
+}
+
+.about-container {
+  max-width: 1000px;
+  margin: 2.5rem auto;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+.profile-card {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.profile-card h2 {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+}
+.profile-card .subtitle {
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+.contact-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.contact-row a {
+  color: var(--colorLight2);
+  text-decoration: underline;
+}
+.details h3 {
+  margin-top: 1rem;
+}
+.skill-columns {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.skill-columns > div {
+  flex: 1;
+  min-width: 200px;
+}
+
 .tab-container {
   width: 90%;
   display: flex;
@@ -99,7 +159,6 @@ h1 {
   cursor: pointer;
   padding: 10px 30px;
   margin-bottom: 20px;
-  z-index: 5;
 }
 .sub-container {
   display: flex;
@@ -152,7 +211,6 @@ h1 {
 .name p {
   font-size: 2rem;
 }
-
 .user-info-container p {
   font-size: 1.5rem;
   font-weight: 200;
@@ -274,8 +332,6 @@ h1 {
 .wrapper.weather-default {
   background: linear-gradient(160deg, #112d4e 0%, #3f72af 100%);
 }
-
-/* subtle overlay images for impact */
 .wrapper.weather-clear .img1 {
   opacity: 10%;
 }
