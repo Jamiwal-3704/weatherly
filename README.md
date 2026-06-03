@@ -1,53 +1,113 @@
-# Weatherly (Weather App)
+# Weatherly — Lightweight Weather App
 
-A small, client-side weather app that displays local and searched weather using OpenWeatherMap. This repository includes a serverless proxy (for Netlify) so your API key can remain secret in production.
+A small, modern weather app that shows current weather for your location or any searched city. It uses OpenWeatherMap for weather data and includes a tiny serverless proxy so your API key can stay secret in production.
 
-Project structure (simple)
+Highlights
 
-- `index.html` — main app page
-- `about.html` — developer / about page
-- `css/styles.css` — styles
-- `js/script.js` — main client JavaScript
-- `assets/` — images and icons used by the UI
-- `functions/weather.js` — serverless function (Netlify) proxying OpenWeather API
-- `config.sample.js` — example local config (do NOT commit real keys)
-- `.env.sample` — example environment variables
-- `.gitignore` — files to ignore
-- `netlify.toml` — Netlify configuration
+- Clean, responsive UI with weather-driven backgrounds.
+- Search by city or use geolocation for instant local weather.
+- Serverless proxy (Netlify) to keep API keys off the client in production.
 
-Quick start (local)
+Preview
 
-1. Copy `config.sample.js` to `config.js` at the project root and set your key:
+Open `index.html` in a browser or run a static server and try searching for a city. The UI adapts to the current weather (clear, rain, snow, clouds, mist).
+
+Project layout
+
+- [index.html](index.html) — main app UI
+- [about.html](about.html) — developer / credits page
+- css/styles.css — styling and weather themes
+- js/script.js — app logic and API calls
+- assets/ — icons and images
+- functions/weather.js — serverless proxy for OpenWeather (Netlify)
+- config.sample.js — local-only config template (gitignored)
+- .env.sample — example environment variables
+
+Quick start — Local development
+
+1. Copy the sample config and add your OpenWeather key (for local testing only):
 
 ```js
-// config.js
+// config.js (DO NOT commit this file)
 const CONFIG = {
-  OPENWEATHER_API_KEY: "your_key_here",
-  USE_NETLIFY_FUNCTION: false, // set to true when using serverless proxy
+  OPENWEATHER_API_KEY: "your_openweather_api_key_here",
+  USE_NETLIFY_FUNCTION: false, // set true when running with the serverless proxy
 };
 ```
 
-2. Open `index.html` in a browser, or serve the folder with a static server (e.g., `npx http-server .`).
-
-Using Netlify functions (recommended for production)
-
-1. Deploy the project to Netlify.
-2. In Netlify site settings → Build & deploy → Environment, add `OPENWEATHER_API_KEY` with your API key.
-3. Ensure `netlify.toml` is present (it points Netlify to the `functions/` folder).
-4. On the client, either remove `config.js` or set `USE_NETLIFY_FUNCTION: true` in `config.js` so the app uses the serverless proxy.
-
-Deploy with Netlify CLI (optional):
+2. Serve the folder (recommended) so fetch requests work properly:
 
 ```bash
-npm install -g netlify-cli
-netlify login
-netlify init
-netlify deploy --prod --dir=.
+# Using a tiny static server
+npx http-server .  # or 'python -m http.server 8000'
 ```
 
-Security notes
+3. Open the served URL (e.g., `http://localhost:8080`) and test the app.
 
-- Never commit `config.js` with your real API key. `.gitignore` already excludes it.
-- Use the Netlify function and `OPENWEATHER_API_KEY` env var for production to keep the key secret.
+Using the serverless proxy (recommended for production)
 
-If you'd like, I can push this cleaned repo to GitHub and connect it to Netlify for an automated deploy — tell me the GitHub repo name and whether it should be public or private.
+In production you should never expose the API key client-side. This project ships with a small serverless function at `functions/weather.js` that proxies requests to OpenWeather.
+
+Netlify (preferred flow)
+
+1. Create a Netlify site from this repository.
+2. In Netlify → Site settings → Build & deploy → Environment, add:
+
+```
+OPENWEATHER_API_KEY=your_openweather_api_key_here
+```
+
+3. Ensure `netlify.toml` exists (it points to `functions/`), then deploy.
+4. Either remove local `config.js` or set `USE_NETLIFY_FUNCTION: true` so the client calls `/.netlify/functions/weather`.
+
+Vercel (alternative)
+
+Vercel expects serverless functions in an `api/` folder. To deploy here:
+
+- Move or copy `functions/weather.js` → `api/weather.js` and adapt the handler if needed.
+- Set an environment variable `OPENWEATHER_API_KEY` in the Vercel dashboard for your project.
+- Deploy with the Vercel CLI or through the dashboard.
+
+Commands to create a GitHub repo and push (one-liners)
+
+```bash
+# Using GitHub CLI
+gh repo create YOUR_USERNAME/weatherly --public --source=. --remote=origin --push
+
+# OR with git only
+git remote add origin https://github.com/YOUR_USERNAME/weatherly.git
+git push -u origin main
+```
+
+Security & best practices
+
+- Never commit `config.js` or any file containing real secrets. `config.sample.js` and `.env.sample` are provided to document variables.
+- Keep the production API key in environment variables on your host (Netlify/Vercel) and use the serverless proxy to fetch data.
+- Rotate your API key if it was accidentally exposed.
+
+Troubleshooting
+
+- If weather doesn't load, check the browser console for network errors and verify `OPENWEATHER_API_KEY` (local or env).
+- If you're using the serverless proxy on Netlify, confirm `USE_NETLIFY_FUNCTION` is `true` in local `config.js` while testing.
+
+Contributing
+
+Feedback and improvements welcome — open an issue or send a PR. Small improvements that help: better error handling, more weather conditions, or caching results.
+
+Credits
+
+- Built and styled by Sahil Ittan
+- Uses OpenWeatherMap API
+
+License
+
+This project is open; add your preferred license file if publishing.
+
+---
+
+If you want, I can:
+
+- push this repository to GitHub for you, or
+- create a Vercel/Netlify deployment and wire the `OPENWEATHER_API_KEY` env var.
+
+Tell me which action you'd like next.
