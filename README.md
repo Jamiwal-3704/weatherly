@@ -111,3 +111,5 @@ If you want, I can:
 - create a Vercel/Netlify deployment and wire the `OPENWEATHER_API_KEY` env var.
 
 Tell me which action you'd like next.
+
+Made with ❤️ by JAMIWAL
