@@ -14,12 +14,51 @@ const errorPage = document.querySelector(".error-page");
 let oldTab = userTab;
 // read API key from a local `config.js` (create from config.sample.js)
 const API_KEY = window.CONFIG?.OPENWEATHER_API_KEY || "";
-// If you deploy to Netlify and add the function, set USE_NETLIFY_FUNCTION to true in config.js
-const USE_NETLIFY_FUNCTION = window.CONFIG?.USE_NETLIFY_FUNCTION || false;
+// If you deploy with a serverless function, set USE_NETLIFY_FUNCTION in `config.js`.
+// If `config.js` is absent and no API key is present, assume serverless proxy is available.
+let USE_NETLIFY_FUNCTION =
+  typeof window.CONFIG?.USE_NETLIFY_FUNCTION !== "undefined"
+    ? window.CONFIG.USE_NETLIFY_FUNCTION
+    : undefined;
+if (typeof USE_NETLIFY_FUNCTION === "undefined")
+  USE_NETLIFY_FUNCTION = !API_KEY;
 if (!API_KEY && !USE_NETLIFY_FUNCTION)
   console.warn(
-    "No OpenWeather API key found. Create config.js from config.sample.js and set OPENWEATHER_API_KEY or enable USE_NETLIFY_FUNCTION.",
+    "No OpenWeather API key found. Create config.js from config.sample.js and set OPENWEATHER_API_KEY or provide a serverless proxy.",
   );
+
+// Helper: call the appropriate weather API endpoint. When using serverless,
+// prefer Vercel (`/api/weather`) then Netlify (`/.netlify/functions/weather`).
+async function callWeatherAPI(paramsObj) {
+  const qs = new URLSearchParams(paramsObj).toString();
+
+  if (USE_NETLIFY_FUNCTION) {
+    const endpoints = ["/api/weather", "/.netlify/functions/weather"];
+    let lastResp = null;
+    for (const ep of endpoints) {
+      try {
+        const resp = await fetch(`${ep}?${qs}`);
+        lastResp = resp;
+        // return on success or on explicit client error so caller can inspect body
+        if (resp.ok || (resp.status >= 400 && resp.status < 500)) return resp;
+      } catch (e) {
+        // try next endpoint
+      }
+    }
+    return lastResp;
+  }
+
+  // Direct call to OpenWeather (requires API key)
+  if (paramsObj.city) {
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+      paramsObj.city,
+    )}&appid=${API_KEY}&units=metric`;
+    return fetch(url);
+  } else {
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${paramsObj.lat}&lon=${paramsObj.lon}&appid=${API_KEY}&units=metric`;
+    return fetch(url);
+  }
+}
 oldTab.classList.add("current-tab");
 getfromSessionStorage();
 
@@ -83,11 +122,17 @@ async function fetchUserWeatherInfo(coordinates) {
   //API CALL
   try {
     // If a Netlify function is configured, call it (server holds the API key)
-    const url = USE_NETLIFY_FUNCTION
-      ? `/.netlify/functions/weather?lat=${lat}&lon=${lon}`
-      : `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
-    const response = await fetch(url);
-    const data = await response.json();
+    const response = await callWeatherAPI({ lat, lon });
+    const data = response ? await response.json() : null;
+
+    // Handle API errors (OpenWeather returns { cod: 404, message: 'city not found' })
+    const code = data?.cod;
+    const numericCode = typeof code === "string" ? Number(code) : code;
+    if (!response.ok || (numericCode && numericCode !== 200)) {
+      loadingScreen.classList.remove("active");
+      errorPage.classList.add("active");
+      return;
+    }
 
     loadingScreen.classList.remove("active");
     userInfoContainer.classList.add("active");
@@ -111,14 +156,33 @@ function renderWeatherInfo(weatherInfo) {
   const cloudiness = document.querySelector("[data-cloudiness]");
 
   //fetch values from weatherINfo object and put it UI elements
-  cityName.innerText = weatherInfo?.name;
-  countryIcon.src = `https://flagcdn.com/144x108/${weatherInfo?.sys?.country.toLowerCase()}.png`;
-  desc.innerText = weatherInfo?.weather?.[0]?.description;
-  weatherIcon.src = `http://openweathermap.org/img/w/${weatherInfo?.weather?.[0]?.icon}.png`;
-  temp.innerText = `${weatherInfo?.main?.temp} °C`;
-  windspeed.innerText = `${weatherInfo?.wind?.speed} m/s`;
-  humidity.innerText = `${weatherInfo?.main?.humidity} %`;
-  cloudiness.innerText = `${weatherInfo?.clouds?.all} %`;
+  cityName.innerText = weatherInfo?.name || "—";
+  const countryCode = weatherInfo?.sys?.country
+    ? String(weatherInfo.sys.country).toLowerCase()
+    : null;
+  if (countryCode) {
+    countryIcon.src = `https://flagcdn.com/144x108/${countryCode}.png`;
+    countryIcon.alt = weatherInfo.sys.country;
+  } else {
+    countryIcon.removeAttribute("src");
+    countryIcon.alt = "";
+  }
+  desc.innerText = weatherInfo?.weather?.[0]?.description || "";
+  // Use HTTPS for weather icon to avoid mixed-content blocking on HTTPS sites
+  const iconCode = weatherInfo?.weather?.[0]?.icon;
+  if (iconCode)
+    weatherIcon.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+  else weatherIcon.removeAttribute("src");
+  temp.innerText =
+    weatherInfo?.main?.temp != null ? `${weatherInfo.main.temp} °C` : "—";
+  windspeed.innerText =
+    weatherInfo?.wind?.speed != null ? `${weatherInfo.wind.speed} m/s` : "—";
+  humidity.innerText =
+    weatherInfo?.main?.humidity != null
+      ? `${weatherInfo.main.humidity} %`
+      : "—";
+  cloudiness.innerText =
+    weatherInfo?.clouds?.all != null ? `${weatherInfo.clouds.all} %` : "—";
 
   // update background according to weather
   setWeatherBackground(weatherInfo);
@@ -167,11 +231,17 @@ async function fetchSearchWeatherInfo(city) {
   grantAccessContainer.classList.remove("active");
 
   try {
-    const url = USE_NETLIFY_FUNCTION
-      ? `/.netlify/functions/weather?city=${encodeURIComponent(city)}`
-      : `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
-    const response = await fetch(url);
-    const data = await response.json();
+    const response = await callWeatherAPI({ city });
+    const data = response ? await response.json() : null;
+
+    const code = data?.cod;
+    const numericCode = typeof code === "string" ? Number(code) : code;
+    if (!response.ok || (numericCode && numericCode !== 200)) {
+      loadingScreen.classList.remove("active");
+      errorPage.classList.add("active");
+      return;
+    }
+
     loadingScreen.classList.remove("active");
     userInfoContainer.classList.add("active");
     renderWeatherInfo(data);

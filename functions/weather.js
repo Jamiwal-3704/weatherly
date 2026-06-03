@@ -27,7 +27,8 @@ exports.handler = async function (event) {
 
     const resp = await fetch(url);
     const data = await resp.json();
-    return { statusCode: 200, body: JSON.stringify(data) };
+    // Return the upstream status so client can handle errors (e.g., 404 city not found)
+    return { statusCode: resp.status || 200, body: JSON.stringify(data) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: String(err) }) };
   }
