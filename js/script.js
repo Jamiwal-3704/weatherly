@@ -109,7 +109,7 @@ function getfromSessionStorage() {
 async function fetchUserWeatherInfo(coordinates) {
   if (!API_KEY && !USE_NETLIFY_FUNCTION) {
     alert(
-      "Missing OpenWeather API key. Create `config.js` from `config.sample.js` and add your key, or enable `USE_NETLIFY_FUNCTION`.",
+      "Missing OpenWeather API key. Create `config.js` from `config.sample.js` and add your key, or enable a serverless proxy.",
     );
     return;
   }
@@ -123,7 +123,8 @@ async function fetchUserWeatherInfo(coordinates) {
   try {
     // If a Netlify function is configured, call it (server holds the API key)
     const response = await callWeatherAPI({ lat, lon });
-    const data = response ? await response.json() : null;
+    if (!response) throw new Error("Weather API endpoint not reachable");
+    const data = await response.json();
 
     // Handle API errors (OpenWeather returns { cod: 404, message: 'city not found' })
     const code = data?.cod;
@@ -140,6 +141,7 @@ async function fetchUserWeatherInfo(coordinates) {
   } catch (err) {
     loadingScreen.classList.remove("active");
     errorPage.classList.add("active");
+    userInfoContainer.classList.remove("active");
   }
 }
 
@@ -222,7 +224,7 @@ searchForm.addEventListener("submit", (e) => {
 async function fetchSearchWeatherInfo(city) {
   if (!API_KEY && !USE_NETLIFY_FUNCTION) {
     alert(
-      "Missing OpenWeather API key. Create `config.js` from `config.sample.js` and add your key, or enable `USE_NETLIFY_FUNCTION`.",
+      "Missing OpenWeather API key. Create `config.js` from `config.sample.js` and add your key, or enable a serverless proxy.",
     );
     return;
   }
@@ -232,7 +234,8 @@ async function fetchSearchWeatherInfo(city) {
 
   try {
     const response = await callWeatherAPI({ city });
-    const data = response ? await response.json() : null;
+    if (!response) throw new Error("Weather API endpoint not reachable");
+    const data = await response.json();
 
     const code = data?.cod;
     const numericCode = typeof code === "string" ? Number(code) : code;
@@ -246,6 +249,7 @@ async function fetchSearchWeatherInfo(city) {
     userInfoContainer.classList.add("active");
     renderWeatherInfo(data);
   } catch (err) {
+    loadingScreen.classList.remove("active");
     userInfoContainer.classList.remove("active");
     errorPage.classList.add("active");
   }

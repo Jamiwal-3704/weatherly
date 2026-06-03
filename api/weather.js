@@ -1,7 +1,8 @@
 // Vercel serverless function: proxies requests to OpenWeatherMap
 // Expects `OPENWEATHER_API_KEY` to be set in Vercel environment variables
 
-const fetch = global.fetch || require("node-fetch");
+const fetchImpl =
+  typeof fetch === "function" ? fetch : global.fetch || require("node-fetch");
 
 module.exports = async (req, res) => {
   try {
@@ -22,7 +23,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const resp = await fetch(url);
+    const resp = await fetchImpl(url);
     const data = await resp.json();
     res.status(resp.status || 200).json(data);
   } catch (err) {
